@@ -1,0 +1,21 @@
+[project]
+name = "vtree"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "John Burnett", email = "github@johnburnett.com"},
+]
+dependencies = [
+    "sparse-file>=0.0.2",
+    "rich>=13.7.1",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
