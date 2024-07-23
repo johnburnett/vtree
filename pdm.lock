@@ -5,10 +5,22 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6a2704e8b63d484b08ce19aea439e9655a4245245781d6cf67bdeab37d3a205a"
+content_hash = "sha256:317a4e26e5616dbb9935aebefe34653cc915ff47edf8a3a1b19a91439651ef8f"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
+
+[[package]]
+name = "colorama"
+version = "0.4.6"
+requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
+summary = "Cross-platform colored terminal text."
+groups = ["default"]
+marker = "platform_system == \"Windows\""
+files = [
+    {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
+    {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
+]
 
 [[package]]
 name = "markdown-it-py"
@@ -71,4 +83,18 @@ groups = ["default"]
 files = [
     {file = "sparse_file-0.0.2-py3-none-any.whl", hash = "sha256:681d24316defcfbffdd7fefe6f5ed34cd0c29ff996f5a65afca6ebd68cb1e7be"},
     {file = "sparse_file-0.0.2.tar.gz", hash = "sha256:48ae58cee21a4e0a935e8453a2e52dbf091f47a2240d6d656d807937d1e61e21"},
+]
+
+[[package]]
+name = "tqdm"
+version = "4.66.4"
+requires_python = ">=3.7"
+summary = "Fast, Extensible Progress Meter"
+groups = ["default"]
+dependencies = [
+    "colorama; platform_system == \"Windows\"",
+]
+files = [
+    {file = "tqdm-4.66.4-py3-none-any.whl", hash = "sha256:b75ca56b413b030bc3f00af51fd2c1a1a5eac6a0c1cca83cbb37a5c52abce644"},
+    {file = "tqdm-4.66.4.tar.gz", hash = "sha256:e4d936c9de8727928f3be6079590e97d9abfe8d39a590be678eb5919ffc186bb"},
 ]

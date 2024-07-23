@@ -1,9 +1,3 @@
-'''Create trees of sparse files mirroring a source tree.
-
-Doing this because using something like windirstat on a mounted Google Drive is
-slow.  So, finding a faster way of crawling the remote drive (rclone), and then
-creating a virtual local tree that windirstat can use instead.
-'''
 import os
 import queue
 import threading
@@ -95,26 +89,33 @@ def start_work_queue(*, num_threads=DEFAULT_NUM_WORKER_THREADS):
     return work_queue
 
 
-source_root_dir = 'G:\\My Drive\\hal'
-target_root_dir = 'C:\\temp_mirror'
+def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
+    # slow, one file at a time
+    # mirror_tree_sparse(source_root_dir, target_root_dir)
 
-# slow, one file at a time
-# mirror_tree_sparse(source_root_dir, target_root_dir)
+    # faster, crawl source and queue creation of target files across threads
+    # work_queue = start_work_queue()
+    # for source_target_paths in iter_mirror_tree_paths(source_root_dir, target_root_dir):
+    #     work_queue.put((mirror_file_sparse, source_target_paths, {}))
+    # work_queue.join()
 
-# faster, crawl source and queue creation of target files across threads
-# work_queue = start_work_queue()
-# for source_target_paths in iter_mirror_tree_paths(source_root_dir, target_root_dir):
-#     work_queue.put((mirror_file_sparse, source_target_paths, {}))
-# work_queue.join()
+    # faster still, crawl source using rclone to get sizes/paths, queue creation of
+    # target files across threads.  Use the following to create rclone_list_file_path:
+    work_queue = start_work_queue()
+    for source_file_sub_path, source_file_size in iter_file_list(rclone_list_file_path):
+        target_file_path = os.path.join(target_root_dir, source_file_sub_path)
+        target_dir_path = os.path.dirname(target_file_path)
+        os.makedirs(target_dir_path, exist_ok=True)
+        work_queue.put((create_sparse_file, (target_file_path, source_file_size), {}))
+    work_queue.join()
 
-# faster still, crawl source using rclone to get sizes/paths, queue creation of
-# target files across threads.  Use the following to create file_list_path:
-# rclone ls google:hal --fast-list > C:\temp\hal.txt
-file_list_path = 'C:\\temp\\hal.txt'
-work_queue = start_work_queue()
-for source_file_sub_path, source_file_size in iter_file_list(file_list_path):
-    target_file_path = os.path.join(target_root_dir, source_file_sub_path)
-    target_dir_path = os.path.dirname(target_file_path)
-    os.makedirs(target_dir_path, exist_ok=True)
-    work_queue.put((create_sparse_file, (target_file_path, source_file_size), {}))
-work_queue.join()
+
+try:
+    rclone_list_file_path = sys.argv[1]
+    assert os.path.isfile(rclone_list_file_path)
+    target_root_dir = sys.argv[2]
+except:
+    print('python -m vtree.mirror <rclone_list_file_path> <target_root_dir>')
+
+if __name__ == '__main__':
+    mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir)
