@@ -5,10 +5,17 @@ import subprocess
 import sys
 import tempfile
 
-from tqdm import trange
+from tqdm import tqdm, trange
 
 
-def estimate_zip_size(root_dir_path, num_trials, files_per_trial):
+def try_unlink(file_path):
+    try:
+        os.unlink(file_path)
+    except FileNotFoundError:
+        pass
+
+
+def estimate_zip_size(root_dir_path, num_trials, files_per_trial, *, compression_methods=(('zip', 5), ('7z', 5), ('7z', 9))):
     all_file_paths = []
     for dir_path, dir_names, file_names in os.walk(root_dir_path):
         # .partial files are from in-progress rclone syncs, which might be running
@@ -17,7 +24,7 @@ def estimate_zip_size(root_dir_path, num_trials, files_per_trial):
     all_file_paths.sort()
     assert len(all_file_paths) >= files_per_trial
 
-    compression_ratios = []
+    methodlevel_to_ratios = {}
     for ii in trange(num_trials, desc=f'Running compression trials across {len(all_file_paths)} files'):
         random.seed(ii)
 
@@ -28,40 +35,48 @@ def estimate_zip_size(root_dir_path, num_trials, files_per_trial):
         sample_file_paths = sorted(sample_file_paths)
         assert len(sample_file_paths) == files_per_trial
 
-        list_file_path = os.path.join(tempfile.gettempdir(), 'estimate_compression.txt')
-        with open(list_file_path, 'w', encoding='utf-8') as fp:
-            fp.writelines(file_path + '\n' for file_path in sample_file_paths)
-
-        zip_file_path = os.path.join(tempfile.gettempdir(), 'estimate_compression.zip')
         try:
-            args = [
-                'C:\\Program Files\\7-Zip\\7z.exe',
-                'a',
-                '-snh',     # store hard links
-                '-snl',     # store symbolic links
-                '-ssp',     # don't touch last-access-time
-                '-spf2',    # use full paths without drive letter
-                zip_file_path,
-                f'@{list_file_path}'
-            ]
-            subprocess.run(args, capture_output=True, check=True)
-            compressed_size = os.path.getsize(zip_file_path)
-        finally:
-            for file_path in (list_file_path, zip_file_path):
+            list_file_path = os.path.join(tempfile.gettempdir(), 'estimate_compression.txt')
+            with open(list_file_path, 'w', encoding='utf-8') as fp:
+                fp.writelines(file_path + '\n' for file_path in sample_file_paths)
+            uncompressed_size = sum(os.path.getsize(file_path) for file_path in sample_file_paths)
+
+            for methodlevel in tqdm(compression_methods, desc='Testing compression methods'):
+                method, level = methodlevel
+                compressed_file_path = os.path.join(tempfile.gettempdir(), f'estimate_compression.{method}')
                 try:
-                    os.unlink(zip_file_path)
-                except FileNotFoundError:
-                    pass
+                    args = [
+                        'C:\\Program Files\\7-Zip\\7z.exe',
+                        'a',
+                        '-y',       # suppress prompts
+                        '-bd',      # no progress
+                        '-snh',     # store hard links
+                        '-snl',     # store symbolic links
+                        '-ssp',     # don't touch last-access-time
+                        '-spf2',    # use full paths without drive letter
+                        f'-mx{level}',
+                        compressed_file_path,
+                        f'@{list_file_path}'
+                    ]
+                    subprocess.run(args, capture_output=True, check=True)
+                    compressed_size = os.path.getsize(compressed_file_path)
+                    compression_ratio = uncompressed_size / compressed_size
+                    methodlevel_to_ratios.setdefault(methodlevel, []).append(compression_ratio)
+                finally:
+                    try_unlink(compressed_file_path)
+        finally:
+            try_unlink(list_file_path)
 
-        uncompressed_size = sum(os.path.getsize(file_path) for file_path in sample_file_paths)
-        compression_ratio = uncompressed_size / compressed_size
-        compression_ratios.append(compression_ratio)
+    print(f'{num_trials} compression trials, {files_per_trial} files per trial:')
+    for methodlevel in sorted(compression_methods):
+        method, level = methodlevel
+        print(f'{method} (level {level})')
+        compression_ratios = methodlevel_to_ratios[methodlevel]
+        print(f'   mean: {statistics.mean(compression_ratios):.2f}x')
+        print(f'    min: {min(compression_ratios):.2f}x')
+        print(f'    max: {max(compression_ratios):.2f}x')
+        print(f'  stdev: {statistics.stdev(compression_ratios):.2f}')
 
-    print(f'compression ({num_trials} trials, {files_per_trial} files per trial):')
-    print(f' mean: {statistics.mean(compression_ratios):.2f}')
-    print(f'  min: {min(compression_ratios):.2f}')
-    print(f'  max: {max(compression_ratios):.2f}')
-    print(f'stdev: {statistics.stdev(compression_ratios):.2f}')
 
 try:
     root_dir_path = sys.argv[1]
