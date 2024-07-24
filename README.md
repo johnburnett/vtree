@@ -18,3 +18,7 @@ Estimate how well a file tree will compress by running a number of trials
 against a subset of the files.
 
 Run via `python -m vtree.estimate_compression <root_path> <num_trials> <files_per_trial>`
+
+## vtree.compress_subdirs
+
+Compress sub-dirs into individual archives named after the sub-dir names.

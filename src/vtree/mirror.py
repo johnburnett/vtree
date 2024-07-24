@@ -1,5 +1,6 @@
 import os
 import queue
+import sys
 import threading
 
 from sparse_file import open_sparse
@@ -110,12 +111,13 @@ def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
     work_queue.join()
 
 
-try:
-    rclone_list_file_path = sys.argv[1]
-    assert os.path.isfile(rclone_list_file_path)
-    target_root_dir = sys.argv[2]
-except:
-    print('python -m vtree.mirror <rclone_list_file_path> <target_root_dir>')
-
 if __name__ == '__main__':
-    mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir)
+    try:
+        rclone_list_file_path = sys.argv[1]
+        assert os.path.isfile(rclone_list_file_path)
+        target_root_dir = sys.argv[2]
+    except:
+        print('python -m vtree.mirror <rclone_list_file_path> <target_root_dir>')
+        sys.exit(1)
+    else:
+        mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir)
