@@ -51,7 +51,6 @@ def iter_file_list(file_list_path):
             line = line.strip()
             size, path = line.split(' ', 1)
             size = int(size)
-            path = path.replace('/', '\\')
             assert not os.path.isabs(path)
             yield (path, size)
 
@@ -97,6 +96,17 @@ def start_work_queue(*, num_threads=DEFAULT_NUM_WORKER_THREADS):
     return work_queue
 
 
+def mirror_rclone_info(rclone_list_file_path, sub_path):
+    total_size = 0
+    total_count = 0
+    for source_file_sub_path, source_file_size in iter_file_list(rclone_list_file_path):
+        if source_file_sub_path.startswith(sub_path):
+            total_size += source_file_size
+            total_count += 1
+    print(f'{total_size:,}')
+    print(f'{total_count:,}')
+
+
 def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
     # slow, one file at a time
     # mirror_tree_sparse(source_root_dir, target_root_dir)
@@ -118,11 +128,17 @@ def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
 
 if __name__ == '__main__':
     try:
-        rclone_list_file_path = sys.argv[1]
-        assert os.path.isfile(rclone_list_file_path)
-        target_root_dir = sys.argv[2]
+        args = sys.argv[1:]
+        if len(args) == 2:
+            func = mirror_rclone_list_sparse
+        elif len(args) == 3:
+            args = args[1:]
+            func = mirror_rclone_info
+        else:
+            raise RuntimeError('bad args')
+        assert os.path.isfile(args[0])
     except:
-        print('python -m vtree.mirror <rclone_list_file_path> <target_root_dir>')
+        print('python -m vtree.mirror [-i] <rclone_list_file_path> <target_root_dir|filter>')
         sys.exit(1)
     else:
-        mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir)
+        func(*args)
