@@ -28,6 +28,13 @@ def create_sparse_file(file_path, size):
         assert fp.hole(0, size)
 
 
+def maybe_create_sparse_file(file_path, size):
+    if not os.path.exists(file_path):
+        dir_path = os.path.dirname(file_path)
+        os.makedirs(dir_path, exist_ok=True)
+        create_sparse_file(file_path, size)
+
+
 def iter_mirror_tree_paths(source_root_dir, target_root_dir):
     for source_dir_path, source_dir_names, source_file_names in os.walk(source_root_dir):
         source_common_path = os.path.commonpath([source_root_dir, source_dir_path])
@@ -105,9 +112,7 @@ def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
     work_queue = start_work_queue()
     for source_file_sub_path, source_file_size in iter_file_list(rclone_list_file_path):
         target_file_path = os.path.join(target_root_dir, source_file_sub_path)
-        target_dir_path = os.path.dirname(target_file_path)
-        os.makedirs(target_dir_path, exist_ok=True)
-        work_queue.put((create_sparse_file, (target_file_path, source_file_size), {}))
+        work_queue.put((maybe_create_sparse_file, (target_file_path, source_file_size), {}))
     work_queue.join()
 
 
