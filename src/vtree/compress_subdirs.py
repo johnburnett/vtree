@@ -61,12 +61,16 @@ def compress_subdirs(root_dir_path):
         shutil.rmtree(ci.source_dir_path)
 
 
-if __name__ == '__main__':
+def main():
     try:
         root_dir_path = sys.argv[1]
         assert os.path.isdir(root_dir_path)
     except:
-        print('python -m vtree.compress_subdirs <root_dir_path>')
+        print('compress_subdirs <root_dir_path>')
         sys.exit(1)
     else:
         compress_subdirs(root_dir_path)
+
+
+if __name__ == '__main__':
+    main()

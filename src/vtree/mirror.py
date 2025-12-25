@@ -51,6 +51,8 @@ def iter_file_list(file_list_path):
             line = line.strip()
             size, path = line.split(' ', 1)
             size = int(size)
+            if size <= 0:
+                continue
             assert not os.path.isabs(path)
             yield (path, size)
 
@@ -117,8 +119,12 @@ def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
     #     work_queue.put((mirror_file_sparse, source_target_paths, {}))
     # work_queue.join()
 
+    # for source_file_sub_path, source_file_size in iter_file_list(rclone_list_file_path):
+    #     target_file_path = os.path.join(target_root_dir, source_file_sub_path)
+    #     maybe_create_sparse_file(target_file_path, source_file_size)
+
     # faster still, crawl source using rclone to get sizes/paths, queue creation of
-    # target files across threads.  Use the following to create rclone_list_file_path:
+    # target files across threads.  Use rclone to generate rclone_list_file_path
     work_queue = start_work_queue()
     for source_file_sub_path, source_file_size in iter_file_list(rclone_list_file_path):
         target_file_path = os.path.join(target_root_dir, source_file_sub_path)
@@ -126,7 +132,7 @@ def mirror_rclone_list_sparse(rclone_list_file_path, target_root_dir):
     work_queue.join()
 
 
-if __name__ == '__main__':
+def main():
     try:
         args = sys.argv[1:]
         if len(args) == 2:
@@ -138,7 +144,11 @@ if __name__ == '__main__':
             raise RuntimeError('bad args')
         assert os.path.isfile(args[0])
     except:
-        print('python -m vtree.mirror [-i] <rclone_list_file_path> <target_root_dir|filter>')
+        print('mirror [-i] <rclone_list_file_path> <target_root_dir|filter>')
         sys.exit(1)
     else:
         func(*args)
+
+
+if __name__ == '__main__':
+    main()

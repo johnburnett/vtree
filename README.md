@@ -10,14 +10,14 @@ creating a virtual local tree that windirstat can use instead.
 
 Create rclone ls file via `rclone ls <remote> --fast-list > <rclone_list_file_path>`
 
-Run via `python -m vtree.mirror <rclone_list_file_path> <target_root_dir>`
+Run via `uv run mirror <rclone_list_file_path> <target_root_dir>`
 
 ## vtree.estimate_compression
 
 Estimate how well a file tree will compress by running a number of trials
 against a subset of the files.
 
-Run via `python -m vtree.estimate_compression <root_path> <num_trials> <files_per_trial>`
+Run via `uv run estimate_compression <root_path> <num_trials> <files_per_trial>`
 
 ## vtree.compress_subdirs
 

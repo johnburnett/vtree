@@ -73,14 +73,18 @@ def estimate_zip_size(root_dir_path, num_trials, files_per_trial, *, compression
         print(f'  stdev: {statistics.stdev(compression_ratios):.2f}')
 
 
-if __name__ == '__main__':
+def main():
     try:
         root_dir_path = sys.argv[1]
         assert os.path.isdir(root_dir_path)
         num_trials = int(sys.argv[2])
         files_per_trial = int(sys.argv[3])
     except:
-        print('python -m vtree.estimate_compression <root_path> <num_trials> <files_per_trial>')
+        print('estimate_compression <root_path> <num_trials> <files_per_trial>')
         sys.exit(1)
     else:
         estimate_zip_size(root_dir_path, num_trials, files_per_trial)
+
+
+if __name__ == '__main__':
+    main()
